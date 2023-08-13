@@ -1,5 +1,3 @@
 [client]
 socket  = /tmp/mysqld.sock
 port = 3306
-user = mysql
-# password = ${SQL_PASS}

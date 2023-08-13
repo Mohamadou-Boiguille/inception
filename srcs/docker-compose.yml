@@ -60,7 +60,6 @@ services:
     volumes:
       - wordpress:/var/www/wordpress
     depends_on:
-      - mariadb
       - wordpress
 
 volumes:

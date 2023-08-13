@@ -10,26 +10,36 @@
       # MYSQL_PASSWORD: ${SQL_PASS}
       # MYSQL_DATABASE: ${SQL_DB}
       # MYSQL_USER: ${SQL_USER}
-
 HOST="mariadb"
 
-if wp core is-installed --allow-root; then
+sleep 5 
+echo "===WordPress Script==="
+if wp core is-installed --path="${WP_PATH}" --allow-root --quiet; then
     echo "WordPress is already configured."
 else
-    until mysqladmin ping -h "$HOST" -u"$WP_DB_USER" -p"$WP_DB_PASS" --silent; do
-        echo "Waiting for MariaDB to be ready..."
-        sleep 2
-    done
-    wp core download --allow-root
-    wp config create --dbname="$WP_DB_NAME" --dbuser="$WP_DB_USER" \
-		--dbpass="$WP_DB_PASS" --dbhost="$HOST" --allow-root
-    wp db create --allow-root
-    wp core install --url=localhost --title="My Inception Site" \
-		--admin_user="$WP_DB_USER" --admin_password="$WP_DB_PASS" \
-		--admin_email="$WP_DB_USER@example.com" --allow-root
-    wp user create "$WP_DB_USER2" "$WP_DB_USER2@example.com" \
-        --role=subscriber --user_pass="$WP_DB_PASS2" --allow-root
+    if mysqladmin ping -h "$HOST" -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" --silent; then 
+		echo "Start config."
+		echo "===wp core download==="
+		wp core download --path="${WP_PATH}" --allow-root
+		echo "===wp config create==="
+		wp config create --dbname="${MYSQL_DATABASE}" --dbuser="${MYSQL_USER}" \
+			--dbpass="${MYSQL_PASSWORD}" --dbhost="${HOST}" \
+			--path="${WP_PATH}" --allow-root
+		echo "===wp db create==="
+		wp db create --path="${WP_PATH}" --allow-root
+		echo "===wp core install==="
+		wp core install --url=localhost --title="My Inception Site" \
+			--admin_user="${WP_USER}" --admin_password="${WP_PASS}" \
+			--admin_email="${EMAIL1}" --path="${WP_PATH}" --allow-root
+		echo "===wp user create==="
+		wp user create "${WP_USER2}" "${EMAIL2}" \
+			--role=subscriber --user_pass="${WP_PASS2}" \
+			--path="${WP_PATH}" --allow-root
 
-    echo "WordPress is now configured."
+		echo "===WordPress is now configured.==="
+	else
+		echo "===WordPress config failed.==="
+		exit 113
+	fi
 fi
-php-fpm7.3
+php-fpm7.3 -F
