@@ -1,0 +1,83 @@
+version: '3'
+
+services:
+  mariadb:
+    container_name: mariadb
+    restart: unless-stopped
+    env_file: .env
+    build:
+      context: requirements/mariadb
+    networks:
+      - inception_network
+    ports: 
+      - "3306:3306"
+    volumes:
+      - mariadb:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${SQL_RPASS}
+      MYSQL_PASSWORD: ${SQL_PASS}
+      MYSQL_DATABASE: ${SQL_DB}
+      MYSQL_USER: ${SQL_USER}
+
+  wordpress:
+    container_name: wordpress
+    restart: on-failure
+    env_file: .env
+    build: 
+      context: requirements/wordpress
+    networks:
+      - inception_network
+    ports: 
+      - "9000:9000"
+    volumes:
+    - wordpress:/var/www/wordpress
+    environment:
+      WP_DB_HOST: mariadb
+      WP_DB_PATH: ${WP_PATH}
+      WP_DB_NAME: ${WP_NAME}
+      WP_DB_USER: ${WP_USER}
+      WP_DB_PASS: ${WP_PASS}
+      WP_DB_USER2: ${WP_USER2}
+      WP_DB_PASS2: ${WP_PASS2}
+      MYSQL_ROOT_PASSWORD: ${SQL_RPASS}
+      MYSQL_PASSWORD: ${SQL_PASS}
+      MYSQL_DATABASE: ${SQL_DB}
+      MYSQL_USER: ${SQL_USER}
+    depends_on:
+      - mariadb
+    entrypoint: ./usr/local/bin/configure-wordpress.sh
+
+  nginx:
+    container_name: nginx
+    restart: on-failure
+    env_file: .env
+    build: 
+      context: requirements/nginx
+    networks:
+      - inception_network
+    ports:
+      - "443:443"
+    volumes:
+      - wordpress:/var/www/wordpress
+    depends_on:
+      - mariadb
+      - wordpress
+
+volumes:
+  wordpress:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: '/home/moboigui/data/wordpress'
+
+  mariadb:
+    driver: local
+    driver_opts:
+      type: 'none' 
+      o: 'bind'
+      device: '/home/moboigui/data/mariadb'
+
+networks:
+  inception_network:
+    driver: bridge
