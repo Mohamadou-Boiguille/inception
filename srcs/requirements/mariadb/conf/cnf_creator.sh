@@ -1,12 +1,17 @@
 #!/bin/bash
 
-my_cnf_file="my.cnf"
-
-cat << EOF > "$my_cnf_file"
-[client]
-host = wordpress
-user = ${SQL_USER}
-password = ${SQL_PASS}
+cat << EOF > "/etc/my.cnf"
+[mysqld]
+datadir = /var/lib/mysql
+socket  = /tmp/mysqld.sock
+bind_address = 0.0.0.0
 port = 3306
-socket = /var/run/mysqld/mysqld.sock
+user = mysql
+
+[client]
+datadir = /var/lib/mysql
+socket  = /tmp/mysqld.sock
+port = 3306
+
+[client-mariadb]
 EOF

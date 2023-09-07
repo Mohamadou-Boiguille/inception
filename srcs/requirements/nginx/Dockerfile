@@ -1,31 +1,20 @@
-# Utilisation de l'image Debian Buster comme base
-FROM debian:buster
+FROM debian:buster-slim
 
-# Mise à jour des paquets
-RUN apt-get update && apt-get install -y curl
+RUN apt-get update && apt-get upgrade && apt-get install -y openssl nginx-light \
+	&& mkdir -p /etc/nginx/ssl \
+	&& apt-get install --only-upgrade openssl \
+	&& apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Installation de mkcert
-RUN curl -L -o mkcert https://github.com/FiloSottile/mkcert/releases/download/v1.4.3/mkcert-v1.4.3-linux-amd64 && \
-	chmod +x mkcert && \
-	mv mkcert /usr/local/bin/
+RUN mkdir -p /etc/nginx/ssl
 
-# Installation des dépendances nécessaires pour mkcert
-RUN apt-get install -y libnss3-tools
+RUN openssl req -newkey rsa:4096 -x509 -sha256 -days 365 -nodes \
+	-out /etc/nginx/ssl/inception.crt -keyout /etc/nginx/ssl/inception.key \
+	-subj "/C=FR/ST=IDF/L=Paris/O=Ecole 42/OU=moboigui/CN=moboigui"
 
-# Génération des certificats avec mkcert
-RUN mkdir -p /etc/nginx/ssl/
-RUN mkcert -install && \
-	mkcert -cert-file /etc/nginx/ssl/inception.crt -key-file /etc/nginx/ssl/inception.key localhost
+COPY conf/nginx.conf /etc/nginx/sites-available/default
+RUN chmod -R 755 /var/www/html \
+	&& chown -R www-data:www-data /var/www/html
 
-# Installation de Nginx
-RUN apt-get install -y nginx
-
-# Copie des fichiers de configuration
-COPY conf/nginx.conf /etc/nginx/nginx.conf
-
-# Exposition du port 443
 EXPOSE 443
 
-# Commande pour démarrer Nginx en mode daemon
 CMD ["nginx", "-g", "daemon off;"]
-
